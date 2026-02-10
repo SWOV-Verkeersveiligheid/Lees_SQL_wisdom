@@ -2,11 +2,12 @@
 # lees_SQL database.R
 #
 #
-# versie wie    wat
-# 0.1    Niels  dbReadTable
-# 0.2    Niels  dbGetQuery, export van Verkeersdoden vanaf 1950
-# 0.3    Niels  export Inwoners 1950 naar ods
-# 0.4    Niels  IVO-tabellen (registratiegraad)
+# versie wie    wanneer   wat
+# 0.1    Niels  202502xx  dbReadTable
+# 0.2    Niels  20250508  dbGetQuery, export van Verkeersdoden vanaf 1950
+# 0.3    Niels  20250509  export Inwoners 1950 naar ods
+# 0.4    Niels  20250510  IVO-tabellen (registratiegraad)
+# 0.5    Niels  20260203  Ongevallen naar ernst, wegbeheerder en regio
 #############################################################################################################
 #
 #rm(list=ls())
@@ -23,23 +24,22 @@ library(DBI)          # Database interface
 library(data.table)
 #require(lubridate)
 
-# lees- en schrijfrechten op de wisdom DB in Uranus server
-update_DB <- FALSE
-source("//hera/kiss/restricted/AssignWisdom_Mod_uranus.R")
+# leesrechten op de wisdom DB in Uranus server
+source("//hera/kiss/0_Management/AssignWisdom_viewer_Uranus_UTF8.R") # conUR
 
-WisdomTabellen <- as.data.frame(odbc::dbListTables(conUW, catalog = 'Wisdom', schema = 'Admin1')) #497
+WisdomTabellen <- as.data.frame(odbc::dbListTables(conUR, catalog = 'Wisdom', schema = 'Admin1')) #497
 names(WisdomTabellen) <- "tabelnaam"
   WisdomTabellen %>% filter(grepl("BRON", tabelnaam) & grepl("WEGT", tabelnaam))
 
-  dbListFields(conUW, "BRON_SLACHTOFFER")
-  dbListFields(conUW, "BRON_OBJECT")
-  dbListFields(conUW, "BRON_ONGEVAL")
-  dbListFields(conUW, "BRON_WEGTYPE")
+  dbListFields(conUR, "BRON_SLACHTOFFER")
+  dbListFields(conUR, "BRON_OBJECT")
+  dbListFields(conUR, "BRON_ONGEVAL")
+  dbListFields(conUR, "BRON_WEGTYPE")
 
 
 #### Voorbeeld dbReadTable of dbGetQuery ####################################################################
-  dbListFields(conUW, "BRON_ONGEVAL")
-Ongevallen <- dbReadTable(conUW, "BRON_ONGEVAL") %>% # eerste helemaal binnenhalen
+  dbListFields(conUR, "BRON_ONGEVAL")
+Ongevallen <- dbReadTable(conUR, "BRON_ONGEVAL") %>% # eerste helemaal binnenhalen
   filter(WEGBEH==1) %>%                             # en dan pas filteren
   filter(JAAR>2022)
 
@@ -47,18 +47,18 @@ Ongevallen <- dbReadTable(conUW, "BRON_ONGEVAL") %>% # eerste helemaal binnenhal
   table(Ongevallen[Ongevallen$OTE_A==94,]$VERVOERSW_SWOV_A, Ongevallen[Ongevallen$OTE_A==94,]$ERNONG5)
 
 # Een sql query gaat sneller, en je kunt bepalen of de variabelen in hoofd- of kleine letters staan
-vars <- paste0("jaar, ernong5, VORNUM, datum, niveaukop, wvk_idwegvak=wvk_id, x, y, hectometer, wegbeh, wegnummer, maxsne, bebouw, bst_code, wegsoort, ",
-               "WVK_ID=wvk_id1, loctypon, ote_A, ote_B, vervoersw_swov_A, vervoersw_swov_B")
-qry <- paste0("SELECT ", vars, " FROM BRON_ONGEVAL WHERE ERNONG5=1")
-Ongevallen <- DBI::dbGetQuery(conn=conUW, qry) 
+vars <- paste0("jaar, ernong5, VORNUM, datum, niveaukop, wvk_idwegvak=wvk_id, x, y, wegnummer, hectometer, wegbeh, ",
+               "wegsoort, WVK_ID=wvk_id1, loctypon, bst_code, bebouw, ote_A, ote_B, vervoersw_swov_A, vervoersw_swov_B")
+qry <- paste0("SELECT ", vars, " FROM BRON_ONGEVAL WHERE JAAR>2007")
+Ongevallen <- DBI::dbGetQuery(conn=conUR, qry) 
 #%>% rename(wvk_idwegvak=wvk_id, WVK_ID=wvk_id1)
 
   table(Ongevallen[Ongevallen$ote_A==94,]$vervoersw_swov_A, Ongevallen[Ongevallen$ote_A==94,]$ernong5)
 
 vars <- paste0("jaar, vornum, ernong5, wegbeh, wegnummer, maxsne, bebouw, bst_code, wegsoort, loctypon, ote_sl, botspartner, vervoersw_swov, tegenpartij_swov, sexesl")
 qry <- paste0("SELECT ", vars, " FROM BRON_SLACHTOFFER WHERE ERNSTSL < 6")
-Slachtoffers <- DBI::dbGetQuery(conn=conUW, qry)
-Wegtype <- dbReadTable(conUW, "BRON_WEGTYPE") #  helemaal binnenhalen
+Slachtoffers <- DBI::dbGetQuery(conn=conUR, qry)
+Wegtype <- dbReadTable(conUR, "BRON_WEGTYPE") #  helemaal binnenhalen
 Wegtype <- Wegtype %>% mutate(vornum=as.numeric(KEY_ONG))
 
   Slachtoffers_wt <- left_join(Slachtoffers %>% mutate(vornum=as.numeric(vornum)),
@@ -70,19 +70,19 @@ Wegtype <- Wegtype %>% mutate(vornum=as.numeric(KEY_ONG))
   table(Slachtoffers_wt$roadtype_ITF, Slachtoffers_wt$jaar)
   pivot_wider(count(Slachtoffers_wt[Slachtoffers_wt$jaar>1995,], roadtype_ITF, sexesl, jaar), names_from=jaar, values_from=n)
   
-  #### Als QAP vervanging cvs/ods maken voor relevante tabellen, incl codeboek ################################
+#### Als QAP vervanging csv/ods maken voor relevante tabellen, incl codeboek ################################
 
 ##### VERKEERSDODEN VANAF 1950 ##############################################################################
 
   Wisdomtabellen %>% filter(grepl("DODEN", tabelnaam))
-  dbListFields(conUW, "DODEN_LFT_WVD_TIJD")
-  dbListFields(conUW, "codeboek")
+  dbListFields(conUR, "DODEN_LFT_WVD_TIJD")
+  dbListFields(conUR, "codeboek")
 
 # selecteer codeboeken
 qry <- "SELECT var_nr, var_naam, cob_code AS code, cob_label as oms, cob_labelgb as omsgb, cob_omschrijving FROM codeboek
     WHERE var_naam IN ('leeftijd_4_75', 'vervoer2') OR var_nr IN (875,876)"
 
-codeboek <- DBI::dbGetQuery(conUW, qry)
+codeboek <- DBI::dbGetQuery(conUR, qry)
 count(codeboek, var_nr, var_naam)
 ref_leeftijd_4_75 <- codeboek %>%
   filter(var_naam=="leeftijd_4_75") %>%
@@ -94,7 +94,7 @@ ref_vervoer2 <- codeboek %>%
   mutate(VERVOER2=as.integer(VERVOER2))
 
 # selecteer data  
-Doden1950 <- dbReadTable(conUW, "DODEN_LFT_WVD_TIJD") %>%
+Doden1950 <- dbReadTable(conUR, "DODEN_LFT_WVD_TIJD") %>%
   select(-ROWID) %>%
   filter(DOOD>0) %>%
   rename(Verkeersdoden=DOOD, Jaar=JAAR)
@@ -126,17 +126,17 @@ write_ods(Doden1950_oms, path=file.path("//HERA/KISS/Qlik/ods","Verkeersdoden_va
 ##### BEVOLKING VANAF 1950 ##################################################################################
 
   WisdomTabellen %>% filter(grepl("INWON", tabelnaam))
-  dbListFields(conUW, "INWONERS_CBS")
-  #dbListFields(conUW, "INWONERS_CBS_VIEW")
-  #dbListFields(conUW, "CBS_INWONERS_LEEFTIJD_GESLACHT")
+  dbListFields(conUR, "INWONERS_CBS")
+  #dbListFields(conUR, "INWONERS_CBS_VIEW")
+  #dbListFields(conUR, "CBS_INWONERS_LEEFTIJD_GESLACHT")
   WisdomTabellen %>% filter(grepl("GEME", tabelnaam))
-  dbListFields(conUW, "GEMEENTEN_LIJST")
+  dbListFields(conUR, "GEMEENTEN_LIJST")
 
 qry <- "SELECT var_nr, var_naam, cob_code AS code, cob_label as oms, cob_labelgb as omsgb, cob_omschrijving FROM codeboek
-  WHERE var_naam IN ('geslacht', 'gemeente_nr', 'provincie','politie_regio','arrondissement')
-     OR var_nr IN (493, 537, 25, 305, 1655)"
+  WHERE var_naam IN ('geslacht', 'gemeente_nr', 'provincie','politie_regio','arrondissement', 'wegbeh')
+     OR var_nr IN (493, 537, 25, 305, 1655, 203)"
 
-codeboek <- DBI::dbGetQuery(conUW, qry)
+codeboek <- DBI::dbGetQuery(conUR, qry)
 count(codeboek, var_nr, var_naam)
 (ref_geslacht <- codeboek %>%
   filter(var_naam=="geslacht" | var_nr==493) %>%
@@ -158,7 +158,10 @@ count(codeboek, var_nr, var_naam)
     mutate(politie_regio=as.integer(politie_regio),
            Politieregio=case_when(
              Politieregio=="FryslÃ¢n" ~ "Fryslân",
-             TRUE ~ Politieregio)) %>%
+             TRUE ~ Politieregio),
+           omsgb=case_when(
+             omsgb=="FryslÃ¢n" ~ "Fryslân",
+             TRUE ~ omsgb)) %>%
     arrange(politie_regio))
 
 (ref_eenheid <- codeboek %>%
@@ -172,8 +175,8 @@ count(codeboek, var_nr, var_naam)
  #   rename(gemeente_nr=code, Gemeente_naam=oms) %>%
  #   mutate(gemeente_nr=as.integer(gemeente_nr))
 
-dbListFields(conUW, "VOR_LEEFTIJD")
-Trans_leeftijd <- dbReadTable(conUW, "VOR_LEEFTIJD") %>% 
+dbListFields(conUR, "VOR_LEEFTIJD")
+Trans_leeftijd <- dbReadTable(conUR, "VOR_LEEFTIJD") %>% 
   select(lft_inw=LFTSL, Leeftijd=KLEEFT_NOVG) %>%
   filter(!is.na(lft_inw)) %>%
   select(-Leeftijd) %>%
@@ -210,7 +213,7 @@ Trans_leeftijd <- dbReadTable(conUW, "VOR_LEEFTIJD") %>%
     # TRUE ~ Leeftijd))
 
 
-Trans_gemeente <- dbReadTable(conUW, "GEMEENTEN_LIJST") %>% 
+Trans_gemeente <- dbReadTable(conUR, "GEMEENTEN_LIJST") %>% 
   select(gemeente_nr=GEMEENTE_NR, Gemeente_naam=GEMEENTE_NAAM, gemeente_nr_recent=GEMEENTEN_RECENT, provincie=PROVINCIE_ONBEKEND,
          politie_regio=POLITIE_REGIO, eenheid=ARRONDISSEMENT)
 
@@ -224,9 +227,9 @@ Gemeente_recent <- Trans_gemeente %>%
   
 Trans_gemeente <- Trans_gemeente %>% select(-provincie, -politie_regio, -eenheid) %>%
   left_join(Gemeente_recent %>% rename(Gemeente_naam_recent=Gemeente_naam), by = join_by(gemeente_nr_recent)) %>%
-  left_join(ref_provincie %>% select(-var_nr, -var_naam), by = join_by(provincie)) %>%
-  left_join(ref_politie_regio %>% select(-var_nr, -var_naam), by = join_by(politie_regio)) %>%
-  left_join(ref_eenheid %>% select(-var_nr, -var_naam), by = join_by(eenheid))
+  left_join(ref_provincie %>% select(-var_nr, -var_naam, -omsgb, -cob_omschrijving), by = join_by(provincie)) %>%
+  left_join(ref_politie_regio %>% select(-var_nr, -var_naam, -omsgb, -cob_omschrijving), by = join_by(politie_regio)) %>%
+  left_join(ref_eenheid %>% select(-var_nr, -var_naam, -omsgb, -cob_omschrijving), by = join_by(eenheid))
 
   names(Trans_gemeente)
   unique(Trans_gemeente$Eenheid)
@@ -234,7 +237,7 @@ Trans_gemeente <- Trans_gemeente %>% select(-provincie, -politie_regio, -eenheid
   unique(Trans_gemeente$Politieregio)
   
   
-Inwoners_cbs <- dbReadTable(conUW, "INWONERS_CBS") %>%
+Inwoners_cbs <- dbReadTable(conUR, "INWONERS_CBS") %>%
   select(-ROWID) # 13.083.021 (1950-2024)
 
   names(Inwoners_cbs)
@@ -400,34 +403,34 @@ gc()
 
 ##### REGISTRATIEGRAAD ######################################################################################
   WisdomTabellen %>% filter(grepl("code", tabelnaam))
-  dbListFields(conUW, "codeboek")
+  dbListFields(conUR, "codeboek")
   
   WisdomTabellen %>% filter(grepl("IVO2", tabelnaam))
-  dbListFields(conUW, "IVO2_DAG_SLA")
-  dbListFields(conUW, "IVO2_LEEFTIJD_SLA")
-  dbListFields(conUW, "IVO2_LFT_VVM")
-  dbListFields(conUW, "IVO2_MAAND_SLA")
-  dbListFields(conUW, "IVO2_PROV_SLA_DZ")
-  dbListFields(conUW, "IVO2_SEX_SLA")
-  dbListFields(conUW, "IVO2_UUR_SLA")
-  dbListFields(conUW, "IVO2_VVM_SLA")
+  dbListFields(conUR, "IVO2_DAG_SLA")
+  dbListFields(conUR, "IVO2_LEEFTIJD_SLA")
+  dbListFields(conUR, "IVO2_LFT_VVM")
+  dbListFields(conUR, "IVO2_MAAND_SLA")
+  dbListFields(conUR, "IVO2_PROV_SLA_DZ")
+  dbListFields(conUR, "IVO2_SEX_SLA")
+  dbListFields(conUR, "IVO2_UUR_SLA")
+  dbListFields(conUR, "IVO2_VVM_SLA")
 
 # selecteer codeboeken
   #View op tabellen, variabelen en codeboeken: SHOW_TABLE_CONTENT
 #  qry <- "SELECT table_name, create_date, modify_date, [Column Name], [Data type] codeboek_var_nr FROM SHOW_TABLE_CONTENT"
-#  Table_Content <- DBI::dbGetQuery(conUW, qry)
+#  Table_Content <- DBI::dbGetQuery(conUR, qry)
 #  names(Table_Content)
   # deze geeft per var_naam aan wat de var_nr is. Het codeboek kan bij een andere var staan (bijv ote_id [1087] gwortdt gebruikt in 1140, 1119 em 1120 (otesl, _A, _B)
   # naast codeboek zijn er voor veel variabelen al REF-tabellen
   
   qry <- "SELECT var_nr, var_naam, cob_code AS code, cob_label as oms FROM codeboek WHERE var_naam IN ('JAAR', 'LETSELERNST_IVO2', 'SLA_IVO', 'SLA_VOR', 'WEEKDAG', 'LEEFTIJD_IVO2', 'KLEEFT', 'MAAND', 'PROV_IVO', 'SEXE', 'UUR_IVO2', 'VVM_IVO', 'VVM_NM')"
-  codeboek <- DBI::dbGetQuery(conUW, qry)
+  codeboek <- DBI::dbGetQuery(conUR, qry)
   (nummers <- unique(codeboek$var_nr))
   char <- ""
   for (i in 1:length(nummers)) {char=paste0(char, nummers[i], sep=",")}
   (char=substring(char,1,nchar(char)-1))
   (qry <- paste0("SELECT var_nr, var_naam, cob_code AS code, cob_label as oms, cob_labelgb as omsgb, cob_omschrijving FROM codeboek WHERE var_nr IN (", char, ")"))
-  codeboek <- DBI::dbGetQuery(conUW, qry)
+  codeboek <- DBI::dbGetQuery(conUR, qry)
   count(codeboek, var_nr, var_naam)
   
   (ref_dag <- codeboek %>%
@@ -478,7 +481,7 @@ gc()
   
     
 # selecteer data  
-Registratiegraad_dag <- dbReadTable(conUW, "IVO2_DAG_SLA") %>%
+Registratiegraad_dag <- dbReadTable(conUR, "IVO2_DAG_SLA") %>%
   filter(LETSELERNST_IVO2==1 & JAAR>1995) %>%
   select(-ROWID, -LETSELERNST_IVO2) %>%
   rename(Geregistreerd=SLA_VOR, Werkelijk=SLA_IVO, Jaar=JAAR) %>%
@@ -493,7 +496,7 @@ Registratiegraad_dag <- dbReadTable(conUW, "IVO2_DAG_SLA") %>%
   pivot_wider(Registratiegraad_dag %>% select(-Geregistreerd, -Registratiegraad) , names_from=Jaar, values_from=Werkelijk)
   pivot_wider(Registratiegraad_dag %>% select(-Geregistreerd, -Werkelijk) , names_from=Jaar, values_from=Registratiegraad)
 
-Registratiegraad_leeftijd <- dbReadTable(conUW, "IVO2_LEEFTIJD_SLA") %>%
+Registratiegraad_leeftijd <- dbReadTable(conUR, "IVO2_LEEFTIJD_SLA") %>%
   filter(LETSELERNST_IVO2==1 & JAAR>1995) %>%
   select(-ROWID, -LETSELERNST_IVO2) %>%
   rename(Geregistreerd=SLA_VOR, Werkelijk=SLA_IVO, Jaar=JAAR) %>%
@@ -509,7 +512,7 @@ Registratiegraad_leeftijd <- dbReadTable(conUW, "IVO2_LEEFTIJD_SLA") %>%
   pivot_wider(Registratiegraad_leeftijd %>% select(-Geregistreerd, -Werkelijk) , names_from=Jaar, values_from=Registratiegraad)
 
   
-Registratiegraad_maand <- dbReadTable(conUW, "IVO2_MAAND_SLA") %>%
+Registratiegraad_maand <- dbReadTable(conUR, "IVO2_MAAND_SLA") %>%
     filter(LETSELERNST_IVO2==1 & JAAR>1995) %>%
     #select(-ROWID)
     select(-LETSELERNST_IVO2) %>%
@@ -526,7 +529,7 @@ Registratiegraad_maand <- dbReadTable(conUW, "IVO2_MAAND_SLA") %>%
   pivot_wider(Registratiegraad_maand %>% select(-Geregistreerd, -Werkelijk) , names_from=Jaar, values_from=Registratiegraad)
   
   
-Registratiegraad_prov <- dbReadTable(conUW, "IVO2_PROV_SLA_DZ") %>%
+Registratiegraad_prov <- dbReadTable(conUR, "IVO2_PROV_SLA_DZ") %>%
     filter(LETSELERNST_IVO2==1 & JAAR>1995) %>%
     #select(-ROWID)
     select(-LETSELERNST_IVO2) %>%
@@ -541,7 +544,7 @@ Registratiegraad_prov <- dbReadTable(conUW, "IVO2_PROV_SLA_DZ") %>%
   pivot_wider(Registratiegraad_prov %>% select(-Geregistreerd, -Registratiegraad) , names_from=Jaar, values_from=Werkelijk)
   pivot_wider(Registratiegraad_prov %>% select(-Geregistreerd, -Werkelijk) , names_from=Jaar, values_from=Registratiegraad)
   
-Registratiegraad_sex <- dbReadTable(conUW, "IVO2_SEX_SLA") %>%
+Registratiegraad_sex <- dbReadTable(conUR, "IVO2_SEX_SLA") %>%
     filter(LETSELERNST_IVO2==1 & JAAR>1995) %>%
     #select(-ROWID)
     select(-LETSELERNST_IVO2) %>%
@@ -556,7 +559,7 @@ Registratiegraad_sex <- dbReadTable(conUW, "IVO2_SEX_SLA") %>%
   pivot_wider(Registratiegraad_sex %>% select(-Geregistreerd, -Registratiegraad) , names_from=Jaar, values_from=Werkelijk)
   pivot_wider(Registratiegraad_sex %>% select(-Geregistreerd, -Werkelijk) , names_from=Jaar, values_from=Registratiegraad)
   
-Registratiegraad_uur <- dbReadTable(conUW, "IVO2_UUR_SLA") %>%
+Registratiegraad_uur <- dbReadTable(conUR, "IVO2_UUR_SLA") %>%
     filter(LETSELERNST_IVO2==1 & JAAR>1995) %>%
     select(-ROWID, -LETSELERNST_IVO2) %>%
     rename(Geregistreerd=SLA_VOR, Werkelijk=SLA_IVO, Jaar=JAAR) %>%
@@ -570,7 +573,7 @@ Registratiegraad_uur <- dbReadTable(conUW, "IVO2_UUR_SLA") %>%
   pivot_wider(Registratiegraad_uur %>% select(-Geregistreerd, -Registratiegraad) , names_from=Jaar, values_from=Werkelijk)
   pivot_wider(Registratiegraad_uur %>% select(-Geregistreerd, -Werkelijk) , names_from=Jaar, values_from=Registratiegraad)
   
-Registratiegraad_vvm <- dbReadTable(conUW, "IVO2_VVM_SLA") %>%
+Registratiegraad_vvm <- dbReadTable(conUR, "IVO2_VVM_SLA") %>%
     filter(LETSELERNST_IVO2==1 & JAAR>1995) %>%
     select(-ROWID, -LETSELERNST_IVO2) %>%
     rename(Geregistreerd=SLA_VOR, Werkelijk=SLA_IVO, Jaar=JAAR) %>%
@@ -644,3 +647,102 @@ write_ods(list("Toelichting"  = Toelichting,
 
 
 #############################################################################################################
+
+#### ONGEVALLEN naar WEGBEHEERDER en GEMEENTE/REGIO vanaf 1976/1987 ####
+#
+# Zie regel 140-230 voor transformatie Gemeente, Prov, Polreg, Eenheid en inlezen codeboek wegbeheerder
+#
+
+vars <- paste0("Jaar, ernong5, key_gem, prov, wegbeh, loctypon, bebouw, PVrapp")
+qry <- paste0("SELECT ", vars, " FROM BRON_ONGEVAL WHERE JAAR>1986") 
+Ong_BRON <- DBI::dbGetQuery(conn=conUR, qry) # 6067426
+Ong_BRON <- Ong_BRON  %>%
+  mutate(pv=case_when(
+    PVrapp %in% c(1,2) ~ "PV/Regset/KMM+",
+    PVrapp %in% c(6) ~ "PV/Regset/KMM+",
+    PVrapp %in% c(7) ~ "PV/Regset/KMM+",
+    ernong5!=5 ~ "PV/Regset/KMM+", # 8 cases
+    PVrapp %in% c(9) ~ "KMM",
+    PVrapp %in% c(10,11) ~ "IM")) %>%
+  mutate(Ernst_ongeval=case_when(
+    ernong5==1 ~ 'Dodelijk',
+    ernong5==5 ~ 'UMS',
+    TRUE ~ 'Letsel')) %>%
+  mutate(bebouw=as.character(bebouw),
+         loctypon=as.character(loctypon),
+         wegbeh=as.character(wegbeh))  %>%
+  left_join(Trans_gemeente, by = join_by(key_gem==gemeente_nr)) %>%
+  left_join(codeboek[codeboek$var_nr==203,c(3,4)], by=join_by(wegbeh==code)) %>% rename(Wegbeheerder=oms) %>%
+  select(-ernong5, -loctypon, -bebouw, -PVrapp) %>%
+  #select(-key_gem, -Gemeente_naam, -wegbeh, ) %>%
+  # behoud de oorspronkelijke gemeente (naar huidige provincie)
+  group_by(Jaar, Ernst_ongeval, pv, gemeente_nr_recent, Gemeente_naam_recent, Gemeente_naam, Provincie, Politieregio, Eenheid, Wegbeheerder) %>%
+  summarize(Aantal=n(), .groups='drop') # 121511
+
+# Ongevallen 1976-1986
+dbListFields(conUR, "VOR_ONG_COG")
+vars_VOR <- paste0("Jaar, gemeente_nr, wegbeh, loctypon, bebouw, Ndood")
+qry_vor <- paste0("SELECT ", vars_VOR, " FROM VOR_ONG_COG  WHERE Jaar<1987") 
+# # ongeveer identiek in de periode 1987-2003, 
+#     muv 30 ongevallen in 1992 en 14 in 1993 (naijlers met resp 32 en 17 extra doden (en 7+10 gewonden)).
+#     muv de gemeente van ongeval; die is obv recente polygonen opnieuw ingedeeld naar de huidige gemeente dd 2004
+#        bijvoorbeeld Den Haag kreeg met Leidschenveen/PrinsClausplein ook een stuk van de A12 en had daardoor ineens veel meer rijkswegongevallen
+#        voor de langjarige vergelijking is dat wel zo handig
+#        neem dus alleen de VOR-reeks 1976-1986 en pak BRON vanaf 1987
+# 
+Ong_VOR <- DBI::dbGetQuery(conUR, qry_vor) # 529648
+# Naijers
+  xong92 <- readRDS("//hera/kiss/vor/NAIJL/xong92.rds")
+  xong93 <- readRDS("//hera/kiss/vor/NAIJL/xong93.rds")
+  Naijlers <- rbind(xong92, xong93) %>%
+    select(Jaar=JAAR, gemeente_nr=KEY_GEM, wegbeh=WEGBEH, loctypon=LOCTYPON, bebouw=BEBOUW, Ndood=NDOOD) %>%
+    mutate(Jaar=if_else(Jaar==92, 1992, 1993)) # 44
+  
+Ong_VORn <- rbind(Ong_VOR %>% filter(Jaar<1987), Naijlers) %>%
+  mutate(pv="PV/Regset/KMM+",
+    Ernst_ongeval=case_when(
+    Ndood==0 ~ "Letsel",
+    TRUE ~ "Dodelijk")) %>% # er is 1 ongeval in 1983 met Ndood=0 en maxlet=0 -> letselongeval
+  mutate(bebouw=as.character(bebouw),
+         loctypon=as.character(loctypon),
+         wegbeh=as.character(wegbeh))  %>%
+  left_join(codeboek[codeboek$var_nr==203,c(3,4)], by=join_by(wegbeh==code)) %>% rename(Wegbeheerder=oms) %>% # zelfde codeboek VOR==BRON
+  mutate(Wegbeheerder=case_when(
+    Wegbeheerder=="Spoorwegen" ~ "Overige instanties",
+    Wegbeheerder=="Staatsbosbeheer" ~ "Overige instanties",
+    TRUE ~ Wegbeheerder)) %>%
+  select(Jaar, Ernst_ongeval, pv, Wegbeheerder, gemeente_nr) %>%
+  left_join(Trans_gemeente, by = join_by(gemeente_nr)) %>%
+  group_by(Jaar, Ernst_ongeval, pv, Wegbeheerder, Gemeente_naam, gemeente_nr_recent, Gemeente_naam_recent, Provincie, Politieregio, Eenheid) %>%
+  summarize(Aantal=n(), .groups='drop') # 252426 / 25469
+
+count(Ong_VORn, Wegbeheerder, wt=Aantal)
+# vergelijk aantallen per gemeente in VOR en BRON 1987-2003
+#count(Ong_VORn[Ong_VORn$Jaar %in% c(1987:2003),], Jaar, Ernst_ongeval, wt=Aantal)
+# as.data.frame(pivot_wider(count(Ong_VOR[Ong_VOR$Jaar %in% c(1987:2003),], Jaar, Ernst_ongeval, wt=Aantal), names_from=Jaar, values_from=n))[,2:17] -
+#   as.data.frame(pivot_wider(count(Ong_BRON[Ong_BRON$Jaar %in% c(1987:2003) & Ong_BRON$Ernst_ongeval!="UMS",], Jaar, Ernst_ongeval, wt=Aantal), names_from=Jaar, values_from=n)[,2:17])
+# 
+# v <-as.data.frame(count(Ong_VOR[Ong_VOR$Jaar %in% c(1987:2003),], Jaar, Provincie, Gemeente_naam_recent, Gemeente_naam, wt=Aantal))
+# b <-  as.data.frame(count(Ong_BRON[Ong_BRON$Jaar %in% c(1987:2003) & Ong_BRON$Ernst_ongeval!="UMS",], Jaar, Provincie, Gemeente_naam_recent, Gemeente_naam, wt=Aantal))
+# write.csv2(v, file=file.path("//HERA/KISS/Qlik/ods","v.csv"), row.names=FALSE) 
+# write.csv2(b, file=file.path("//HERA/KISS/Qlik/ods","b.csv"), row.names=FALSE) 
+# 
+
+pivot_wider(count(Ong_VORn, Jaar, Wegbeheerder, wt=Aantal), names_from=Jaar, values_from=n)
+pivot_wider(count(Ong_VORn, Jaar, Provincie, wt=Aantal), names_from=Jaar, values_from=n)
+pivot_wider(count(Ong_VORn, Jaar, Eenheid, wt=Aantal), names_from=Jaar, values_from=n)
+pivot_wider(count(Ong_VORn, Jaar, Politieregio, wt=Aantal), names_from=Jaar, values_from=n)
+
+
+count(Ongevallen_BRON, PVrapp)
+
+Ongevallen_recent <- bind_rows(Ong_VORn, Ong_BRON)
+
+pivot_wider(count(Ongevallen_recent[Ongevallen_recent$Jaar>2008,], Jaar, pv, wt=Aantal), names_from=Jaar, values_from=n)
+
+# getOption("encoding") #"native.enc" werkt ook, maar excel importeert het fout. Gebruik Gegevens ophalen
+# getOption("native.enc") #NULL 
+#iconvlist() #374
+write.csv2(Ongevallen_recent, file=file.path("//HERA/KISS/Qlik/ods","Ongevallen_recent.csv"), row.names=FALSE) #, fileEncoding = "UTF8") # is ook gewoon goed
+
+####
