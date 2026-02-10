@@ -1,0 +1,67 @@
+"...1";"...2";"...3";"...4";"...5"
+"Reporting rate Road fatalities";NA;NA;NA;NA
+"For various reasons the police do not register all road traffic crashes and casualties.";NA;NA;NA;NA
+"Other registers like the Statistics Netherlands Cause of Death Statistics are not complete either.";NA;NA;NA;NA
+"Each of the data sources has its own ‘blind spots’.";NA;NA;NA;NA
+"Based on an individual data source it is therefore impossible to obtain a clear picture of the actual numbers of crashes and casualties.";NA;NA;NA;NA
+"The actual numbers can however be estimated by combining the individual sources.";NA;NA;NA;NA
+"This may then provide insight into the degree of completeness of each individual data source.";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"Statistics Netherlands analyses data from three different data sources to determine the number of road deaths in the Netherlands:";NA;NA;NA;NA
+"Court files on deaths by unnatural causes";NA;NA;NA;NA
+"Cause of death forms filled out by a coroner";NA;NA;NA;NA
+"Database of Registered Crashes in the Netherlands (in Dutch: BRON, police crash reports compliled by the Ministry of Infrastructure and Water Management (IenW))";NA;NA;NA;NA
+"We consider this combined data set as complete.";NA;NA;NA;NA
+"See also our FactSheet Road Deaths";NA;NA;NA;NA
+"https://swov.nl/en/fact/road-deaths-3-how-number-road-deaths-netherlands-determined";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"Registration rate and available tables";NA;NA;NA;NA
+"The completeness of a source is expressed in the reporting rate: the reported number devided by the true number (as percentage).";NA;NA;NA;NA
+"The reporting rate is especially low for slighter accindents (just propery damage or slight injuries), for single accidents and for accidents where no motor vehicle is involved.";NA;NA;NA;NA
+"Sometimes accidents involving elderly people in traffic are wronlgy classified as an illness. If a person involved dies from injury obtained in the crash, this meets the definition of a road traffic accident.";NA;NA;NA;NA
+"There is no reason to assume that the type of road plays a role in the completeness of the reporting of fatal road cashes.";NA;NA;NA;NA
+"However the type of vehicles that is regularly used on the type of road in question does indirectely ensure that the  completeness differs per road type.";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"The reporting rate is available by the following chacteristics: Month (Maand), Weekday (Weekdag), Time (Tijdstip), Region (Provincie), Transport mode (Vervoerswijze), Age (Leeftijd) , Sex (Geslacht).";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"Totals";NA;NA;NA;NA
+NA;"CBS";"BRON";"Reporting rate";NA
+NA;"True";"Reported";"Road Fatalities";NA
+"1996";"1251";"1180";"0.94324540367705834";NA
+"1997";"1235";"1163";"0.94170040485829964";NA
+"1998";"1149";"1066";"0.92776327241079204";NA
+"1999";"1186";"1090";"0.91905564924114669";NA
+"2000";"1166";"1082";"0.92795883361921094";NA
+"2001";"1083";"993";"0.91689750692520777";NA
+"2002";"1066";"987";"0.92589118198874298";NA
+"2003";"1088";"1028";"0.94485294117647056";NA
+"2004";"881";"804";"0.9125993189557321";NA
+"2005";"817";"750";"0.91799265605875158";NA
+"2006";"811";"730";"0.90012330456226886";NA
+"2007";"791";"709";"0.89633375474083443";NA
+"2008";"750";"677";"0.90266666666666662";NA
+"2009";"720";"644";"0.89444444444444449";NA
+"2010";"640";"537";"0.83906250000000004";NA
+"2011";"661";"546";"0.82602118003025715";NA
+"2012";"650";"562";"0.86461538461538456";NA
+"2013";"570";"476";"0.83508771929824566";NA
+"2014";"570";"476";"0.83508771929824566";NA
+"2015";"621";"531";"0.85507246376811596";NA
+"2016";"629";"533";"0.84737678855325915";NA
+"2017";"613";"535";"0.87275693311582381";NA
+"2018";"678";"598";"0.88200589970501475";NA
+"2019";"661";"586";"0.88653555219364599";NA
+"2020";"610";"515";"0.84426229508196726";NA
+"2021";"582";"509";"0.87457044673539519";NA
+"2022";"745";"655";"0.87919463087248317";NA
+"2023";"684";"608";"0.88888888888888884";NA
+"2024";"675";"566";"0.83851851851851855";NA
+NA;NA;NA;NA;NA
+"In the years 2012 -2016, BRON is over complete because since 2012 there is no feedback between CBS and IenW.";NA;NA;NA;NA
+"Some fatalities in BRON have another cause of death in the CBS data, for example suicide.";NA;NA;NA;NA
+"At case level CBS is not allowed to pinpoint these cases (Low on statistic, GDPR).";NA;NA;NA;NA
+"See also the report Road death registration in the Netherlands; Comparing the different source files (Registraties van verkeersdoden Nederland) (Bos et al., 2023)";NA;NA;NA;NA
+"https://swov.nl/nl/publicatie/registraties-van-verkeersdoden-nederland";NA;NA;NA;NA
+"In recent years there is some cleaning of BRON and over completeness has decreased.";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"Also by differences of characteristics of overlapping cases, it may occur that the reporting rate of a certain group exceeds 100%, for example when the transport mode is slighly different in either source.";NA;NA;NA;NA

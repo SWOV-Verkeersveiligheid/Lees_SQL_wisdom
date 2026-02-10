@@ -1,0 +1,67 @@
+"...1";"...2";"...3";"...4";"...5"
+"Registratiegraad verkeersdoden";NA;NA;NA;NA
+"De politie registreert vanwege diverse redenen niet alle verkeersongevallen en slachtoffers.";NA;NA;NA;NA
+"Ook alternatieve registraties, zoals de Doodsoorzakenstatistiek van het CBS zijn niet volledig.";NA;NA;NA;NA
+"Elk van de gegevensbronnen heeft zijn eigen 'blinde vlekken'.";NA;NA;NA;NA
+"Op basis van elke afzonderlijke gegevensbron is het daarom niet mogelijk een volledig beeld te krijgen van de werkelijke omvang van het aantal ongevallen en verkeersslachtoffers.";NA;NA;NA;NA
+"Door bronnen te combineren kan de werkelijke omvang wel worden geschat.";NA;NA;NA;NA
+"Hieruit kan vervolgens weer inzicht worden verkregen in de mate van volledigheid van elk van de afzonderlijke gegevensbronnen.";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"CBS combineert voor het maken van de Statistiek Verkeersdoden drie bronnen:";NA;NA;NA;NA
+"Rechtbankdossiers van niet-natuurlijke overlijdens";NA;NA;NA;NA
+"Doodsoorzaken statistiek";NA;NA;NA;NA
+"Verkeersongevallenregistrate (IenW/Politie)";NA;NA;NA;NA
+"We beschouwen deze gecombineerde bron als volledig.";NA;NA;NA;NA
+"Zie ook de FactSheet verkeersdoden";NA;NA;NA;NA
+"https://swov.nl/nl/fact/verkeersdoden-3-hoe-wordt-het-aantal-verkeersdoden-nederland-vastgesteld";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"Registratiegraad en beschikbare tabellen";NA;NA;NA;NA
+"De volledigheid van een gegevensbron wordt uitgedrukt in de registratiegraad: het geregistreerde aantal gedeeld door de werkelijke omvang (uitgedrukt als percentage).";NA;NA;NA;NA
+"De registratiegraad is vooral laag voor minder ernstige ongevallen (alleen materiële schade of licht gewonden), voor enkelvoudige ongevallen en voor ongevallen waar geen motorvoertuig bij betrokken is.";NA;NA;NA;NA
+"Soms worden ongevallen met ouderen in het verkeer onterecht aangemerkt als een onwelwording. Wanneer een betrokkene aan het letsel dat in de botsing ontstaat overlijdt dan voldoet dit aan de definitie van een verkeersongeval.";NA;NA;NA;NA
+"Er is geen aanleiding te veronderstellen dat het wegtype een rol speelt bij de volledigheid van de registratie van dodelijke verkeersongevallen.";NA;NA;NA;NA
+"Wel zorgt het soort vervoermiddelen dat van het betreffende wegtype gebruik maakt, er indirect voor dat de volledigheid per wegtype verschilt.";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"De registratiegraad is beschikbaar naar de kenmerken: Maand, Weekdag, Tijdstip, Provincie, Vervoerswijze, Leeftijd, Geslacht.";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"Totalen";NA;NA;NA;NA
+NA;"CBS";"BRON";"Registratiegraad";NA
+NA;"Werkelijk";"Geregistreerd";"Verkeersdoden";NA
+"1996";"1251";"1180";"0.94324540367705834";NA
+"1997";"1235";"1163";"0.94170040485829964";NA
+"1998";"1149";"1066";"0.92776327241079204";NA
+"1999";"1186";"1090";"0.91905564924114669";NA
+"2000";"1166";"1082";"0.92795883361921094";NA
+"2001";"1083";"993";"0.91689750692520777";NA
+"2002";"1066";"987";"0.92589118198874298";NA
+"2003";"1088";"1028";"0.94485294117647056";NA
+"2004";"881";"804";"0.9125993189557321";NA
+"2005";"817";"750";"0.91799265605875158";NA
+"2006";"811";"730";"0.90012330456226886";NA
+"2007";"791";"709";"0.89633375474083443";NA
+"2008";"750";"677";"0.90266666666666662";NA
+"2009";"720";"644";"0.89444444444444449";NA
+"2010";"640";"537";"0.83906250000000004";NA
+"2011";"661";"546";"0.82602118003025715";NA
+"2012";"650";"562";"0.86461538461538456";NA
+"2013";"570";"476";"0.83508771929824566";NA
+"2014";"570";"476";"0.83508771929824566";NA
+"2015";"621";"531";"0.85507246376811596";NA
+"2016";"629";"533";"0.84737678855325915";NA
+"2017";"613";"535";"0.87275693311582381";NA
+"2018";"678";"598";"0.88200589970501475";NA
+"2019";"661";"586";"0.88653555219364599";NA
+"2020";"610";"515";"0.84426229508196726";NA
+"2021";"582";"509";"0.87457044673539519";NA
+"2022";"745";"655";"0.87919463087248317";NA
+"2023";"684";"608";"0.88888888888888884";NA
+"2024";"675";"566";"0.83851851851851855";NA
+NA;NA;NA;NA;NA
+"In de jaren 2012 -2016 is BRON overcompleet doordat vanaf 2012 geen terugkoppeling meer plaatsvindt tussen CBS en IenW.";NA;NA;NA;NA
+"Van sommige verkeersdoden in BRON heeft CBS dan een andere doodsoorzaak genoteerd, bijvoorbeeld zelfdoding.";NA;NA;NA;NA
+"Op casus niveau kan CBS niet aangeven welke dat zijn (Wet op de statistiek, AVG).";NA;NA;NA;NA
+"Zie het rapport Registraties van verkeersdoden Nederland (Bos et al., 2023)";NA;NA;NA;NA
+"https://swov.nl/nl/publicatie/registraties-van-verkeersdoden-nederland";NA;NA;NA;NA
+"In recente jaren vindt er weer enige opschoning van BRON plaats en is de overcompleetheid afgenomen.";NA;NA;NA;NA
+NA;NA;NA;NA;NA
+"Ook door een verschil in kenmerken van overeenkomende cases, kan het voorkomen dat de registratiegraad van een bepaalde groep boven de 100% uit komt, bijvoorbeeld als de vervoerswijze iets verschilt.";NA;NA;NA;NA
