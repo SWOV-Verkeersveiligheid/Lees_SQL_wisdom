@@ -1,5 +1,5 @@
 #############################################################################################################
-# lees_SQL database.R
+# lees_SQL_diverse_projectjes.R
 #
 #
 # versie wie    wat
@@ -234,7 +234,7 @@ Sla <- Slachtoffers %>%
 # table(Sla[! Sla$vvm %in% c('Voetganger','Fietser'),]$botspartner, 
 #       Sla[! Sla$vvm %in% c('Voetganger','Fietser'),]$tegenp)
 
-write.csv2(Sla, file=file.path("//HERA/KISS/Qlik/ods","Sla_E2408.csv"), row.names=FALSE)
+write.csv2(Sla, file=file.path("//HERA/KISS/Qlik/ods/Projectjes","Sla_E2408.csv"), row.names=FALSE)
 
 #### Motorongevallen RD #####################################################################################
 
@@ -315,6 +315,6 @@ unique(Sla$key_gem)
 count(Sla, vvm, vervoersw_swov, ote_sl)
 count(Sla, tegenp, tegenpartij_swov, botspartner)
 
-write.csv2(Sla, file=file.path("//HERA/KISS/Qlik/ods","Sla_Motor_RD.csv"), row.names=FALSE)
+write.csv2(Sla, file=file.path("//HERA/KISS/Qlik/ods/Projectjes","Sla_Motor_RD.csv"), row.names=FALSE)
 
 ####

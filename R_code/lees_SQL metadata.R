@@ -1,5 +1,5 @@
 #############################################################################################################
-# lees_SQL database.R
+# lees_SQL metadata.R
 #
 #
 # versie wie    wat
@@ -310,30 +310,7 @@ names(Prod_org_geg_dmx) # org_nr org_naam_kort Internat
             
 
 getwd()
-write.csv2(Prod_org_geg_dmx, file.path("//hera/kiss//Qlik/ods","ProductBronTabel.csv"), row.names=FALSE)
+write.csv2(Prod_org_geg_dmx, file.path("//hera/kiss//Qlik/ods/Metadata","ProductBronTabel.csv"), row.names=FALSE)
 
 #########################################################################################################################
 
-WisdomTabellen %>% filter(grepl("BRON", tabelnaam))
-
-  dbListFields(conUW, "BRON_SLACHTOFFER")
-  dbListFields(conUW, "BRON_OBJECT")
-  dbListFields(conUW, "BRON_ONGEVAL")
-
-
-#### Voorbeeld dbReadTable of dbGetQuery ####################################################################
-  dbListFields(conUW, "BRON_ONGEVAL")
-Ongevallen <- dbReadTable(conUW, "BRON_ONGEVAL") %>% # eerste helemaal binnenhalen
-  filter(WEGBEH==1) %>%                             # en dan pas filteren
-  filter(JAAR>2022)
-
-  names(Ongevallen)
-  table(Ongevallen[Ongevallen$OTE_A==94,]$VERVOERSW_SWOV_A, Ongevallen[Ongevallen$OTE_A==94,]$ERNONG5)
-
-# Een sql query gaat sneller, en je kunt bepalen of de variabelen in hoofd- of kleine letters staan
-vars <- paste0("jaar, ernong5, VORNUM, datum, niveaukop, wvk_idwegvak=wvk_id, x, y, wegnummer, hectometer, wegbeh, ",
-               "wegsoort, WVK_ID=wvk_id1, loctypon, bst_code, bebouw, ote_A, ote_B, vervoersw_swov_A, vervoersw_swov_B")
-qry <- paste0("SELECT ", vars, " FROM BRON_ONGEVAL WHERE JAAR>2007")
-Ongevallen <- DBI::dbGetQuery(conn=conUW, qry)
-
-  table(Ongevallen[Ongevallen$ote_A==94,]$vervoersw_swov_A, Ongevallen[Ongevallen$ote_A==94,]$ernong5)
