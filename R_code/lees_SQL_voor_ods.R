@@ -8,6 +8,7 @@
 # 0.3    Niels  20250509  export Inwoners 1950 naar ods
 # 0.4    Niels  20250510  IVO-tabellen (registratiegraad)
 # 0.5    Niels  20260203  Ongevallen naar ernst, wegbeheerder en regio
+# 0.6    Niels  20260210  Slachtoffers naar Regio en naar Leeftijd/Geslacht/Vervoerswijze
 #############################################################################################################
 #
 #rm(list=ls())
@@ -79,7 +80,7 @@ Wegtype <- Wegtype %>% mutate(vornum=as.numeric(KEY_ONG))
   dbListFields(conUR, "codeboek")
 
 # selecteer codeboeken
-qry <- "SELECT var_nr, var_naam, cob_code AS code, cob_label as oms, cob_labelgb as omsgb, cob_omschrijving FROM codeboek
+qry <- "SELECT var_nr, var_naam, cob_code AS code, cob_label as oms, cob_labelgb as omsgb, cob_omschrijving FROM dbo.codeboek
     WHERE var_naam IN ('leeftijd_4_75', 'vervoer2') OR var_nr IN (875,876)"
 
 codeboek <- DBI::dbGetQuery(conUR, qry)
@@ -132,9 +133,11 @@ write_ods(Doden1950_oms, path=file.path("//HERA/KISS/Qlik/ods","Verkeersdoden_va
   WisdomTabellen %>% filter(grepl("GEME", tabelnaam))
   dbListFields(conUR, "GEMEENTEN_LIJST")
 
-qry <- "SELECT var_nr, var_naam, cob_code AS code, cob_label as oms, cob_labelgb as omsgb, cob_omschrijving FROM codeboek
-  WHERE var_naam IN ('geslacht', 'gemeente_nr', 'provincie','politie_regio','arrondissement', 'wegbeh')
-     OR var_nr IN (493, 537, 25, 305, 1655, 203)"
+qry <- "SELECT var_nr, var_naam, cob_code AS code, cob_label as oms, cob_labelgb as omsgb, cob_omschrijving FROM dbo.codeboek
+  WHERE var_naam IN ('geslacht', 'gemeente_nr', 'provincie','politie_regio','arrondissement',
+  'wegbeh', 'aardong', 'mne_code', 'ote_id', 'leeftijd_4_75', 'vervoer2',
+  'LETSELERNST_IVO2', 'SLA_IVO', 'SLA_VOR', 'WEEKDAG', 'LEEFTIJD_IVO2', 'KLEEFT', 'MAAND', 'PROV_IVO', 'SEXE', 'UUR_IVO2', 'VVM_IVO', 'VVM_NM')
+     OR var_nr IN (493, 537, 25, 305, 1655, 203, 101, 1112, 1087, 875,876, 916)"# let op, soms is er wel een var_nr, maar is de var_naam leeg
 
 codeboek <- DBI::dbGetQuery(conUR, qry)
 count(codeboek, var_nr, var_naam)
@@ -203,7 +206,20 @@ Trans_leeftijd <- dbReadTable(conUR, "VOR_LEEFTIJD") %>%
     between(lft_inw, 90, 94) ~ "90-94 jaar",
     between(lft_inw, 95,120) ~ "95+",
     lft_inw==32760 ~ "Onbekend",
-    TRUE ~ as.character(lft_inw))) 
+    TRUE ~ as.character(lft_inw))) %>%
+  mutate(Leeftijd_cbs=case_when(
+      between(lft_inw,  0, 14) ~ "0-14 jaar",
+      between(lft_inw, 15, 19) ~ "15-19 jaar",
+      between(lft_inw, 20, 24) ~ "20-24 jaar",
+      between(lft_inw, 25, 29) ~ "25-29 jaar",
+      between(lft_inw, 30, 39) ~ "30-39 jaar",
+      between(lft_inw, 40, 49) ~ "40-49 jaar",
+      between(lft_inw, 50, 59) ~ "50-59 jaar",
+      between(lft_inw, 60, 69) ~ "60-69 jaar",
+      between(lft_inw, 70, 79) ~ "70-79 jaar",
+      between(lft_inw, 80,120) ~ "80+",
+      lft_inw==32760 ~ "Onbekend",
+      TRUE ~ as.character(lft_inw)))
 #%>% mutate(Leeftijd=case_when(
     # between(lft_inw, 80, 84) ~ 8084,
     # between(lft_inw, 85, 89) ~ 8589,
@@ -648,7 +664,7 @@ write_ods(list("Toelichting"  = Toelichting,
 
 #############################################################################################################
 
-#### ONGEVALLEN naar WEGBEHEERDER en GEMEENTE/REGIO vanaf 1976/1987 ####
+#### ONGEVALLEN naar WEGBEHEERDER en GEMEENTE/REGIO vanaf 1976/1987 #########################################
 #
 # Zie regel 140-230 voor transformatie Gemeente, Prov, Polreg, Eenheid en inlezen codeboek wegbeheerder
 #
@@ -734,15 +750,163 @@ pivot_wider(count(Ong_VORn, Jaar, Eenheid, wt=Aantal), names_from=Jaar, values_f
 pivot_wider(count(Ong_VORn, Jaar, Politieregio, wt=Aantal), names_from=Jaar, values_from=n)
 
 
-count(Ongevallen_BRON, PVrapp)
+count(Ong_BRON, pv)
 
-Ongevallen_recent <- bind_rows(Ong_VORn, Ong_BRON)
+Ongevallen_regio <- bind_rows(Ong_VORn, Ong_BRON)
 
-pivot_wider(count(Ongevallen_recent[Ongevallen_recent$Jaar>2008,], Jaar, pv, wt=Aantal), names_from=Jaar, values_from=n)
+pivot_wider(count(Ongevallen_regio[Ongevallen_regio$Jaar>2008,], Jaar, pv, wt=Aantal), names_from=Jaar, values_from=n)
 
-# getOption("encoding") #"native.enc" werkt ook, maar excel importeert het fout. Gebruik Gegevens ophalen
-# getOption("native.enc") #NULL 
-#iconvlist() #374
-write.csv2(Ongevallen_recent, file=file.path("//HERA/KISS/Qlik/ods","Ongevallen_recent.csv"), row.names=FALSE) #, fileEncoding = "UTF8") # is ook gewoon goed
+# Fryslân ging fout, maar dat ligt aan excel. Gebruik Gegevens ophalen
+write.csv2(Ongevallen_regio, file=file.path("//HERA/KISS/Qlik/ods","Ongevallen_regio.csv"), row.names=FALSE) # 146980
 
-####
+write_ods(Ongevallen_regio, path=file.path("//HERA/KISS/Qlik/ods","Ongevallen_regio.ods"))
+# draaitabellen in vernieuwen met behoud van sortering in ods gaat wat lastig
+# wellicht toch gewoon als ruwe data met een toelichtingenblad, dan maken ze de draaitabelen en sortering zelf maar
+
+#############################################################################################################
+
+#### SLACHTOFFERS naar regio: PROV_vervoerswijze_leeftijd_geslacht, Gemeente_origineel vanaf 1976/1987 ######
+
+vars <- paste0("Jaar, ernstsl, key_gem, wegbeh, ote_sl, sexesl, lftsl")
+qry <- paste0("SELECT ", vars, " FROM BRON_SLACHTOFFER WHERE JAAR>1985") # ERNSTSL < 6 AND 
+Slachtoffers <- DBI::dbGetQuery(conUR, qry)
+
+(TRANS_BRON_VERVOER <- DBI::dbGetQuery(conUR, paste0("SELECT VVM_IVO, OTE_ID FROM TRANS_BRON_VERVOER")) %>% arrange(VVM_IVO))
+
+Sla_BRON <- Slachtoffers %>%
+  mutate(Afloop=case_when(
+    ernstsl %in% c(0:5) ~ "Overleden",
+   # ernstsl %in% c(6:10)~ "Letsel",
+    ernstsl %in% c(6:8) ~ "Naar ziekenhuis",
+    ernstsl %in% c(9:10)~ "Licht letsel")) %>%
+  #   #gebruik dezelfde indeling als voor registratiegraad
+  #   Vervoerswijze     1996-2024 (verschil in 2024 doordat in ivo-tabellen nog de levering van april staat die later is overruled)
+  # 1    Auto/bestel 10032 +1
+  # 2      Bromfiets  1702
+  # 3          Fiets  4795 +1
+  # 4          Motor  1812
+  # 5         Overig   459 -2
+  # 6     Voetganger  2101
+  # 7 Vrachtauto/bus   235
+  # mutate(Vervoerswijze=case_when(
+  #   ote_sl %in% c(1,11) ~ "Auto/bestel",
+  #   ote_sl %in% c(61,62,63) ~ "Bromfiets", # incl brommobiel
+  #   ote_sl %in% c(64,66) ~ "Fiets",
+  #   ote_sl %in% c(31) ~ "Motor",
+  #   ote_sl %in% c(71) ~ "Voetganger",
+  #   ote_sl %in% c(21,22,23,24) ~ "Vrachtauto/bus",
+  #   TRUE ~ "Overig")) %>% # incl scootmobiel
+  # mutate(ote_sl=as.character(ote_sl))  %>%
+  # left_join(codeboek[codeboek$var_nr==1087,c(3,4)], by=join_by(ote_sl==code)) %>% rename(vervoerswijze=oms) %>%
+  left_join(TRANS_BRON_VERVOER, by=join_by(ote_sl==OTE_ID)) %>%
+  left_join(Trans_leeftijd, by=join_by(lftsl==lft_inw)) %>%
+  mutate(VVM_IVO=as.character(VVM_IVO),
+         sexesl=if_else(sexesl %in% c(1,2), as.character(sexesl), '3' )) %>%
+  left_join(codeboek[codeboek$var_nr==551,c(3,4)], by=join_by(VVM_IVO==code)) %>% rename(Vervoerswijze=oms) %>%
+  left_join(codeboek[codeboek$var_nr==493,c(3,4)], by=join_by(sexesl==code)) %>% rename(Geslacht=oms) %>%
+  left_join(Trans_gemeente, by=join_by("key_gem"=="gemeente_nr")) %>%
+  group_by(Jaar, Afloop, Provincie, Gemeente_naam_recent, Gemeente_naam, Vervoerswijze, Geslacht, Leeftijd_cbs) %>%
+  summarize(Aantal=n(), .groups='drop')
+
+pivot_wider(count(Sla_BRON[Sla_BRON$Jaar>1995,], Vervoerswijze, Afloop, wt=Aantal), names_from=Afloop, values_from=n)
+pivot_wider(count(Sla_BRON[Sla_BRON$Jaar>=2020 & Sla_BRON$Afloop=='Overleden',], Vervoerswijze, Jaar, wt=Aantal), names_from=Jaar, values_from=n)
+pivot_wider(count(Sla_BRON[Sla_BRON$Jaar>=2020 & Sla_BRON$Afloop=='Overleden',], Leeftijd_cbs, Jaar, wt=Aantal), names_from=Jaar, values_from=n)
+pivot_wider(count(Sla_BRON[Sla_BRON$Jaar>=2020 & Sla_BRON$Afloop=='Overleden',], Geslacht, Jaar, wt=Aantal), names_from=Jaar, values_from=n)
+
+pivot_wider(count(Sla_BRON[Sla_BRON$Jaar>2003,], Vervoerswijze, Jaar, wt=Aantal), names_from=Jaar, values_from=n)
+pivot_wider(count(Sla_BRON[Sla_BRON$Jaar<2003,], Vervoerswijze, Jaar, wt=Aantal), names_from=Jaar, values_from=n)
+print(pivot_wider(count(Sla_BRON[Sla_BRON$Jaar<2033,], Afloop, Jaar, wt=Aantal), names_from=Afloop, values_from=n), n=1000)
+
+names(Sla_BRON)
+
+#### Idem 1976-1986 + naijlers 1992/1993
+
+dbListFields(conUR, "VOR_SLACHT_COG")
+vars_VOR <- paste0("Jaar, ernstsl, gemeente_nr, wegbeh, VVM, lftsl, sexesl")
+qry_vor <- paste0("SELECT ", vars_VOR, " FROM VOR_SLACHT_COG  WHERE Jaar<1987") 
+Sla_VOR <- DBI::dbGetQuery(conUR, qry_vor) %>% # 630616
+  select(-wegbeh)
+
+count(Sla_VOR, Jaar)
+
+# Naijlers
+xobj92 <- readRDS("//hera/kiss/vor/NAIJL/xobj92.rds") %>%
+  select(VORNUM, KEY_OBJ, VVM)
+xobj93 <- readRDS("//hera/kiss/vor/NAIJL/xobj93.rds")  %>%
+  select(VORNUM, KEY_OBJ, VVM)
+
+xsla92 <- readRDS("//hera/kiss/vor/NAIJL/xsla92.rds") %>%
+  left_join(xobj92, by = join_by(VORNUM, KEY_OBJ)) %>%
+  mutate(Jaar=1992) %>%
+  select(Jaar, ernstsl=ERNSTSL, gemeente_nr=KEY_GEM, lftsl=LFTSL, sexesl=SEXESL, VVM)
+xsla93 <- readRDS("//hera/kiss/vor/NAIJL/xsla93.rds") %>%
+  left_join(xobj93, by = join_by(VORNUM, KEY_OBJ)) %>%
+  mutate(Jaar=1993) %>%
+  select(Jaar, ernstsl=ERNSTSL, gemeente_nr=KEY_GEM, lftsl=LFTSL, sexesl=SEXESL, VVM)
+
+names(xsla92)==names(xsla93)
+names(Sla_VOR)
+
+
+(TRANS_VOR_VERVOER <- DBI::dbGetQuery(conUR, paste0("SELECT VVM, VVMSH FROM VOR_VERVOER")))
+
+Sla_VORn <- rbind(xsla92, xsla93, Sla_VOR) %>%
+  mutate(Afloop=case_when(
+    ernstsl %in% c(0:5) ~ "Overleden",
+    # ernstsl %in% c(6:10)~ "Letsel",
+    ernstsl %in% c(6:8) ~ "Naar ziekenhuis",
+    ernstsl %in% c(9:10)~ "Licht letsel")) %>%
+  # gebruik dezelfde indeling als voor registratiegraad
+  left_join(TRANS_VOR_VERVOER, by=join_by(VVM==VVM)) %>%
+  left_join(Trans_leeftijd, by=join_by(lftsl==lft_inw)) %>%
+  mutate(sexesl=if_else(sexesl %in% c(1,2), as.character(sexesl), '3' )) %>%
+  mutate(VVMSH=as.character(VVMSH)) %>%
+  left_join(codeboek[codeboek$var_nr==916,c(3,4)], by=join_by(VVMSH==code)) %>% rename(Vervoerswijze=oms) %>%
+  mutate(Vervoerswijze=case_when(
+    Vervoerswijze=="Snorfiets" ~ "Bromfiets",
+    Vervoerswijze %in% c("Overig vvm","Losse voorwerpen","Bomen","Overige obstakel") ~ "Overig",
+    Vervoerswijze=="Motor/scooter" ~ "Motor",
+    Vervoerswijze=="Lopen" ~ "Voetganger",
+    Vervoerswijze %in% c("Auto","Bestelauto") ~ "Auto/bestel",
+    Vervoerswijze %in% c("Vrachtauto","Bus") ~ "Vrachtauto/bus",
+    TRUE ~ Vervoerswijze)) %>%
+  left_join(codeboek[codeboek$var_nr==493,c(3,4)], by=join_by(sexesl==code)) %>% rename(Geslacht=oms) %>%
+  left_join(Trans_gemeente, by=join_by("gemeente_nr"=="gemeente_nr")) %>%
+  group_by(Jaar, Afloop, Provincie, Gemeente_naam_recent, Gemeente_naam, Vervoerswijze, Geslacht, Leeftijd_cbs) %>%
+  summarize(Aantal=n(), .groups='drop') # 251625
+
+
+rm(xobj92, xobj93, xsla92, xsla93)
+
+count(Sla_VORn, Jaar, Afloop)
+pivot_wider(count(Sla_VORn, Jaar, Afloop), names_from=Jaar, values_from=n)
+
+names(Sla_VORn)
+
+#per Gemeente orgigineel, D+L
+Slachtoffers_gemeente <- rbind(Sla_VORn, Sla_BRON) %>%
+  mutate(Afloop=case_when(
+    Afloop=="Naar ziekenhuis" ~ "Letsel",
+    Afloop=="Licht letsel" ~ "Letsel",
+    TRUE ~ Afloop)) %>%
+  group_by(Jaar, Afloop, Provincie, Gemeente_naam_recent, Gemeente_naam) %>%
+  summarize(Aantal=sum(Aantal), .groups='drop') # 11901 + 27275 = 39176
+
+#per Provincie D+ZH+L, vvm, leeft, sexe
+Slachtoffers_vervoerswijze <-rbind(Sla_VORn, Sla_BRON) %>%
+  group_by(Jaar, Afloop, Provincie, Vervoerswijze, Leeftijd=Leeftijd_cbs, Geslacht) %>%
+  summarize(Aantal=sum(Aantal), .groups='drop') # 31777 + 105981 = 137758
+
+#Check
+# count(Slachtoffers_gemeente, wt=Aantal) # 1.916.242
+# count(Slachtoffers_vervoerswijze, wt=Aantal) == nrow(Slachtoffers) + nrow(Sla_VOR) + nrow(xsla92) + nrow(xsla93) # TRUE
+
+write.csv2(Slachtoffers_gemeente, file=file.path("//HERA/KISS/Qlik/ods","Slachtoffers_gemeente.csv"), row.names=FALSE)
+write.csv2(Slachtoffers_vervoerswijze, file=file.path("//HERA/KISS/Qlik/ods","Slachtoffers_vervoerswijze.csv"), row.names=FALSE)
+
+#"Toelichting"  = Toelichting,
+write_ods(list("Gemeente"    = Slachtoffers_gemeente,
+               "Vervoerswijze"= Slachtoffers_vervoerswijze),
+          path=file.path("//HERA/KISS/Qlik/ods","Slachtoffers_regio.ods"))
+
+#############################################################################################################
